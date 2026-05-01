@@ -21,6 +21,10 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Rectangle;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class GameScreen implements Screen {
 
@@ -36,10 +40,13 @@ public class GameScreen implements Screen {
     private SpriteBatch batch;
     private OrthographicCamera camera;
     private Texture playerSheet;
+    private Texture enemySheet;
 
     Animation<TextureRegion> idleAnim, runAnim, jumpAnim;
     float stateTime = 0f;
     boolean facingRight = true;
+
+    enemySheet = new Texture("enemy-sime.png");
 
 
     // ── Player ──
