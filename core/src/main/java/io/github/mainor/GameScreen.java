@@ -12,6 +12,7 @@ package io.github.mainor;
 //
 // ============================================================
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
@@ -42,11 +43,11 @@ public class GameScreen implements Screen {
     private Texture playerSheet;
     private Texture enemySheet;
 
+
+
     Animation<TextureRegion> idleAnim, runAnim, jumpAnim;
     float stateTime = 0f;
     boolean facingRight = true;
-
-    enemySheet = new Texture("enemy-sime.png");
 
 
     // ── Player ──
@@ -66,18 +67,7 @@ public class GameScreen implements Screen {
         camera.setToOrtho(false, 640, 480);
 
         playerSheet = new Texture("player.png");
-
-        // DAY 2 TODO 2: Split the sprite sheet and create animations:
-        //   TextureRegion[][] grid = TextureRegion.split(playerSheet, 64, 64);
-        //
-        //   idleAnim = new Animation<>(0.2f, grid[0]);   // row 0
-        //   runAnim  = new Animation<>(0.1f, grid[1]);   // row 1
-        //   jumpAnim = new Animation<>(0.15f, grid[2]);  // row 2
-        //
-        //   Set play modes:
-        //     idleAnim → LOOP
-        //     runAnim  → LOOP
-        //     jumpAnim → NORMAL
+        enemySheet = new Texture("enemy-sime.png");
 
         TextureRegion[][] pGrid = TextureRegion.split(playerSheet, 64,64);
         idleAnim = new Animation<>(0.2f, pGrid[0]);
@@ -166,7 +156,6 @@ public class GameScreen implements Screen {
     public void resize(int width, int height) {
         camera.setToOrtho(false, width, height);
     }
-
     @Override public void pause() {}
     @Override public void resume() {}
     @Override public void hide() {}
