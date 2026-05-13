@@ -175,12 +175,56 @@ public class GameScreen implements Screen {
         for (float[] enemy : enemies) {
             Rectangle enemyRect = new Rectangle(enemy[0] + 12, enemy[1] + 10, 40, 36);
 
+            if (playerBounds.overlaps(enemyRect)) {
+                playerX = 100;
+                playerY = GROUND_Y;
+                velocityY = 0;
+                loseLife();
+                return;
+
+
+            }
+
+        }
+
+        Iterator<Rectangle> it = coins.iterator();
+        while (it.hasNext()) {
+            Rectangle coin = it.next();
+            if (playerBounds.overlaps(coin)) {
+                it.remove();
+                score++;
+                System.out.println("Coin! Score: " + score);
+            }
+        }
+
+        if (coins.isEmpty()) {
+            switchToGameOver = true;
+            playerWon = true;
         }
 
     }
 
+    private void loseLife() {
+        lives--;
+        if (lives <= 0) {
+            switchToGameOver = true;
+            playerWon = false;
+        } else {
+            playerX = SPAWN_X;
+            playerY = SPAWN_Y;
+            velocityY = 0;
+            onGround = false;
+        }
+    }
+
     @Override
     public void render(float delta) {
+        if (swithToGameOver) {
+            game.setScreen(new GameOverScreen(game, score, playerWon));
+            dispose();
+            return;
+        }
+
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)){
             playerX -= MOVE_SPEED * delta;
             facingRight = false;
@@ -196,29 +240,47 @@ public class GameScreen implements Screen {
             onGround = false;
         }
 
+        if (playerX < 0) playerX = 0;
+        if (playerX > W - 64) playerX = W - 64;
+
+
 
         // ── PHYSICS ──
-
 
         velocityY += GRAVITY * delta;
         playerY += velocityY * delta;
 
-        if (playerY <= GROUND_Y){
-            playerY = GROUND_Y;
-            velocityY = 0;
-            onGround = true;
+        onGround = false;
+        for (Rectangle plat : platforms) {
+            if (velocityY <= 0) {
+                float playerBottom = playerY;
+                float platTop = plat.y + plat.height;
+                boolean horizontalOverlap =
+                    (playerX + 64 > plat.x) && (playerX < plat.x + plat.width);
+                if (horizontalOverlap
+                    && playerBottom <= platTop
+                    && playerBottom >= platTop - 15) {
+                    playerY = platTop;
+                    velocityY = 0;
+                    onGround = true;
+                }
+            }
         }
+
+        if (playerY < -100) {
+            loseLife();
+        }
+
+        updateEnemies(delta);
+        checkCollisions();
+
+
 
         // ── ANIMATION ──
 
         // DAY 2 TODO 4: Add delta to stateTime
         stateTime += delta;
 
-        // DAY 2 TODO 5: Pick the right animation based on player state:
-        //   Animation<TextureRegion> currentAnim;
-        //   - If NOT onGround              → currentAnim = jumpAnim
-        //   - Else if LEFT or RIGHT pressed → currentAnim = runAnim
-        //   - Else                          → currentAnim = idleAnim
         Animation<TextureRegion> currentAnim;
         if (!onGround) {
             currentAnim = jumpAnim;
@@ -231,12 +293,12 @@ public class GameScreen implements Screen {
 
 
         // DAY 2 TODO 6: Get the current frame:
-        //   boolean looping = onGround;
-        //   TextureRegion frame = currentAnim.getKeyFrame(stateTime, looping);
+           boolean looping = onGround;
+           TextureRegion frame = currentAnim.getKeyFrame(stateTime, looping);
 
         // DAY 2 TODO 7: Flip the frame to face the right direction:
-        //   if (!facingRight && !frame.isFlipX()) frame.flip(true, false);
-        //   else if (facingRight && frame.isFlipX()) frame.flip(true, false);
+           if (!facingRight && !frame.isFlipX()) frame.flip(true, false);
+           else if (facingRight && frame.isFlipX()) frame.flip(true, false);
 
 
         // ── DRAW ──
@@ -246,15 +308,35 @@ public class GameScreen implements Screen {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
 
-        // DAY 2 TODO 8: Replace this line with: batch.draw(frame, playerX, playerY);
+        batch.setColor(0.3f, 0.3f, 0.5f, 1f);
+        for (Rectangle plat : platforms) {
+            batch.draw(pixel, plat.x, plat.y, plat.width, plat.height);
+        }
+        batch.setColor(Color.WHITE);
+
         batch.draw(playerSheet, playerX, playerY, 64, 64);
+
+        TextureRegion slimeFrame = slimeAnim.getKeyFrame(stateTime, true);
+        for (float[] enemy : enemies) {
+            batch.draw(slimeFrame, enemy[0], enemy[1]);
+        }
+
+        TextureRegion coinFrame = coinAnim.getKeyFrame(stateTime, true);
+        for (Rectangle coin : coins) {
+            batch.draw(coinFrame, coin.x, coin.y);
+        }
+
+        hudFont.setColor(Color.WHITE);
+        hudFont.draw(batch, "Score: " + score, 10, H - 10);
+        hudFont.draw(batch, "Lives: " + lives, 10, H - 35);
+        hudFont.draw(batch, "Coins: " + coins.size() + " left", W - 180, H - 10);
 
         batch.end();
     }
 
     @Override
-    public void resize(int width, int height) {
-        camera.setToOrtho(false, width, height);
+    public void resize(int w, int h) {
+        camera.setToOrtho(false, W, H);
     }
     @Override public void pause() {}
     @Override public void resume() {}
@@ -264,5 +346,9 @@ public class GameScreen implements Screen {
     public void dispose() {
         batch.dispose();
         playerSheet.dispose();
+        enemySheet.dispose();
+        coinSheet.dispose();
+        pixel.dispose();
+        hudFont.dispose();
     }
 }
